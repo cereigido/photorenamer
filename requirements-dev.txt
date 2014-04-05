@@ -1,0 +1,10 @@
+cov-core==1.7
+coverage==3.7.1
+gnureadline==6.2.5
+ipdb==0.8
+ipython==2.0.0
+py==1.4.20
+pytest==2.5.2
+pytest-cov==1.6
+git+git://github.com/mverteuil/pytest-ipdb.git
+-r requirements.txt
