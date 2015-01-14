@@ -7,4 +7,4 @@ py==1.4.26
 pytest==2.6.4
 pytest-cov==1.8.1
 git+git://github.com/mverteuil/pytest-ipdb.git
--r requirements.txt 
+-r requirements.txt
