@@ -25,6 +25,6 @@ setup(
         'photorenamer',
     ],
     install_requires=[
-        'PIL==1.1.7'
+        'Pillow>=2.4.0'
     ],
 )

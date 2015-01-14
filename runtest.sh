@@ -1,2 +1,2 @@
 #!/bin/bash
-py.test -sv --ipdb --cov photorenamer photorenamer/test.py
+py.test -s --ipdb --cov photorenamer photorenamer/test.py
