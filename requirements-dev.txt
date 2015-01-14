@@ -6,6 +6,5 @@ ipython==2.3.1
 py==1.4.26
 pytest==2.6.4
 pytest-cov==1.8.1
-pytest-ipdb==0.1-prerelease
+git+git://github.com/mverteuil/pytest-ipdb.git
 -r requirements.txt
-
