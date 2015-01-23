@@ -3,9 +3,9 @@ photorenamer
 
 > For an obsessive-compulsive disorder <del>programmer</del> person who likes to order pictures by its original date and time.
 
-- Navigate or choose the desired dir 
-- Pictures will be renamed according to it's original creation time 
-- File pattern will something like YYYYMMDD-HHMMSS.ext
+- Run from or choose the desired dir 
+- Pictures will be renamed according to it's original creation time (stamped on file by most cameras) or time created on disk
+- File pattern will something like YYYYMMDD-HHMMSS-HASH.ext
 
 Installation
 ------------
@@ -18,12 +18,22 @@ Usage
 -----
 
 ```sh
-photorenamer [-p PATH]
+python photorenamer.py [-h] [-p PATH] [-v]
 ```
+
+Arguments
+---------
+
+-  -p PATH, --path PATH
+  - Path containing images to be renamed
+-  -v, --verbose
+  - Verbose mode
+
 
 What's (maybe) next?
 --------------------
 
+- Allow date time editing
 - Allow recursive renaming
 
 License
