@@ -1,6 +1,7 @@
 photorenamer.egg-info/
 build/
 dist/
+cover/
 *.pyc
 __pycache__
 .DS_Store

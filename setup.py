@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 from os.path import dirname, abspath, join
 from setuptools import setup
@@ -13,18 +13,19 @@ setup(
     long_description=README,
     author='Paulo Cereigido',
     url='https://github.com/cereigido/photorenamer',
-    version='1.0.0',
+    version='1.1.0',
     zip_safe=False,
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'photorenamer = photorenamer.photorenamer:main'
+            'photorenamer = photorenamer:main'
         ],
     },
     packages=[
         'photorenamer',
     ],
     install_requires=[
-        'Pillow>=2.4.0'
+        'pexif==0.13',
+        'Pillow>=2.5.3',
     ],
 )
