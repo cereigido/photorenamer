@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from os.path import dirname, abspath, join
-from setuptools import setup
+from setuptools import find_packages, setup
 
 with open(abspath(join(dirname(__file__), 'README.md'))) as fileobj:
     README = fileobj.read().strip()
@@ -21,11 +21,9 @@ setup(
             'photorenamer = photorenamer:main'
         ],
     },
-    packages=[
-        'photorenamer',
-    ],
+    packages=find_packages(),
     install_requires=[
-        'pexif==0.13',
+        'pyexif==0.2.1',
         'Pillow>=2.5.3',
     ],
 )

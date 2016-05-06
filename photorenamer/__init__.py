@@ -9,20 +9,13 @@ from os import getcwd, listdir, remove, rename
 from os.path import getctime, getsize, isdir, isfile, join
 from PIL import Image
 from PIL.ExifTags import TAGS
+from re import search
+from sys import argv
 
-args = None
 INFO = 1
 DEBUG = 2
-ALLOWED_EXTENSIONS = ('jpg', 'jpeg', 'png')
-
-
-def get_checksum(path):
-    if not isfile(path):
-        raise InvalidPathError()
-
-    # using Image.open instead of open makes different exif
-    # data point to the same hase
-    return md5(Image.open(path).tostring()).hexdigest()
+ALLOWED_EXTENSIONS = ('jpg', 'png')
+parsed_args = None
 
 
 def get_exif(path):
@@ -36,22 +29,24 @@ def get_exif(path):
     return ret
 
 
+def get_checksum(path):
+    if not isfile(path):
+        raise InvalidPathError()
+
+    # using Image.open instead of open ignores different exif
+    return md5(Image.open(path).tobytes()).hexdigest()
+
+
 def get_new_file_name(path):
     i = Image.open(path)
     info = get_exif(path)
     ext = path[path.rindex('.'):].lower()
 
-    if 'DateTimeOriginal' not in info and args.use_ctime:
-        i2 = pexif.JpegFile.fromFile(path)
-        dt = str(datetime.fromtimestamp(getctime(path))).replace('-', ':')
-        i2.exif.primary.ExtendedEXIF.DateTime = dt
-        i2.exif.primary.ExtendedEXIF.DateTimeOriginal = dt
-        i2.writeFile(path)
-        info = get_exif(path)
-
     checksum = get_checksum(path)
 
-    if 'DateTimeOriginal' in info:
+    if path.find('/IMG-') > 0:
+        new_file_name = '%s-000000-%s%s' % (path[-19:-11], checksum[:4], ext)
+    elif 'DateTimeOriginal' in info:
         datetime_fmt = info.get('DateTimeOriginal').replace(':', '').replace(' ', '-')
         new_file_name = '%s-%s%s' % (datetime_fmt, checksum[:4], ext)
     else:
@@ -60,17 +55,24 @@ def get_new_file_name(path):
     return new_file_name
 
 
+def get_work_path(path):
+    if not path:
+        return getcwd()
+    elif not isdir(path):
+        raise InvalidPathError()
+    else:
+        return path
+
+
 def log(log_level, msg):
-    if log_level == INFO or args.verbose:
+    if log_level == INFO or parsed_args.verbose:
         print msg
 
 
-def main(args):
-    path = args.path
-    if not path:
-        path = getcwd()
-    elif not isdir(path):
-        raise InvalidPathError()
+def main():
+    global parsed_args
+    parsed_args = parse_args()
+    path = get_work_path(parsed_args.path)
 
     log(INFO, 'Renaming photos from %s' % path)
     files = listdir(path)
@@ -78,7 +80,7 @@ def main(args):
     renamed = 0
 
     for file_name in files:
-        if file_name.lower().split('.')[-1] in ALLOWED_EXTENSIONS:
+        if file_name.lower().split('.')[-1] in ALLOWED_EXTENSIONS and not search('^\d{8}-\d{6}-\w{4}.\w{3}$', file_name):
             old_file_path = join(path, file_name)
             new_file_name = get_new_file_name(old_file_path)
             new_file_path = join(path, new_file_name)
@@ -99,11 +101,7 @@ def main(args):
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('-p', '--path', dest='path', help='Path containing images to be renamed', required=False)
-    parser.add_argument('-c', '--ctime', dest='use_ctime', help='If date tag is not available, use file creation time?', action='store_true', default=False)
-    parser.add_argument('-v', '--verbose', dest='verbose', help='Verbose mode', action='store_true', default=False)
-    return parser.parse_args()
-
-
-if __name__ == '__main__':
-    main(parse_args())
+    parser.add_argument('--path', dest='path', help='Path containing images to be renamed', required=False)
+    parser.add_argument('--ctime', dest='use_ctime', help='If date tag is not available, use file creation time?', action='store_true', default=False)
+    parser.add_argument('--verbose', dest='verbose', help='Verbose mode', action='store_true', default=False)
+    return parser.parse_args(argv[1:])
