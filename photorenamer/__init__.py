@@ -1,107 +1,71 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# from __future__ import print
 from argparse import ArgumentParser
-from datetime import datetime
-from exceptions import InvalidPathError
-from hashlib import md5
-from os import getcwd, listdir, remove, rename
+from datetime import datetime, timedelta
+from os import getcwd, listdir, remove
 from os.path import getctime, getsize, isdir, isfile, join
-from PIL import Image
-from PIL.ExifTags import TAGS
-from re import search
+from subprocess import check_output
 from sys import argv
-
-INFO = 1
-DEBUG = 2
-ALLOWED_EXTENSIONS = ('jpg', 'png')
-parsed_args = None
-
-
-def get_exif(path):
-    ret = {}
-    i = Image.open(path)
-    info = i._getexif() or {}
-    for tag, value in info.items():
-        decoded = TAGS.get(tag, tag)
-        ret[decoded] = value
-
-    return ret
+from PIL import Image   
+from PIL.ExifTags import TAGS
+from photorenamer.exceptions import InvalidPathError
+from photorenamer.prompter import ask_change_valid_file, ask_new_filename
+from photorenamer.scanner import is_valid_extension, is_valid_filename, list_files, rename_file
 
 
-def get_checksum(path):
-    if not isfile(path):
-        raise InvalidPathError()
+# def get_new_file_name(path):
+#     if path.find('/IMG-') > 0:
+#         new_file_name = '%s-000000-%s%s' % (path[-19:-11], checksum[:4], ext)
+#     else:
+#         new_file_name = '_%s%s' % (checksum, ext)
 
-    # using Image.open instead of open ignores different exif
-    return md5(Image.open(path).tobytes()).hexdigest()
+#     return new_file_name
 
+# def main2():
+    # for file_name in files:
+    #     if file_name.lower().split('.')[-1] in ALLOWED_EXTENSIONS and not search('^\d{8}-\d{6}-\w{4}.\w{3}$', file_name):
+    #         old_file_path = join(path, file_name)
+    #         new_file_name = get_new_file_name(old_file_path)
+    #         new_file_path = join(path, new_file_name)
 
-def get_new_file_name(path):
-    i = Image.open(path)
-    info = get_exif(path)
-    ext = path[path.rindex('.'):].lower()
+    #         if file_name != new_file_name:
+    #             if not isfile(new_file_path):
+    #                 log(DEBUG, '%s -> %s' % (file_name, new_file_name))
+    #                 rename(old_file_path, new_file_path)
+    #                 renamed += 1
+    #             else:
+    #                 ui = raw_input('Cannot rename %s, target file %s already exists, remove source file? (Y/n) ' % (file_name, new_file_name)) or 'Y'
+    #                 if ui.upper() == 'Y':
+    #                     log(DEBUG, 'Removing file %s' % file_name)
+    #                     remove(old_file_path)
 
-    checksum = get_checksum(path)
-
-    if path.find('/IMG-') > 0:
-        new_file_name = '%s-000000-%s%s' % (path[-19:-11], checksum[:4], ext)
-    elif 'DateTimeOriginal' in info:
-        datetime_fmt = info.get('DateTimeOriginal').replace(':', '').replace(' ', '-')
-        new_file_name = '%s-%s%s' % (datetime_fmt, checksum[:4], ext)
-    else:
-        new_file_name = '%s%s' % (checksum, ext)
-
-    return new_file_name
-
-
-def get_work_path(path):
-    if not path:
-        return getcwd()
-    elif not isdir(path):
-        raise InvalidPathError()
-    else:
-        return path
-
-
-def log(log_level, msg):
-    if log_level == INFO or parsed_args.verbose:
-        print msg
+    # log(DEBUG, '%s files renamed' % renamed)
 
 
 def main():
-    global parsed_args
-    parsed_args = parse_args()
-    path = get_work_path(parsed_args.path)
+    parsed_args = parse_args(argv[1:])
+    path = parsed_args.path
+    add_seconds = parsed_args.add_seconds
 
-    log(INFO, 'Renaming photos from %s' % path)
-    files = listdir(path)
-    files.sort()
-    renamed = 0
+    for filename in list_files(path):
+        full_path = join(path, filename)
+        if is_valid_filename(filename):
+            rename_file(full_path, add_seconds)
+            pass
+        elif is_valid_extension(full_path):
+            rename_file(full_path, add_seconds)
 
-    for file_name in files:
-        if file_name.lower().split('.')[-1] in ALLOWED_EXTENSIONS and not search('^\d{8}-\d{6}-\w{4}.\w{3}$', file_name):
-            old_file_path = join(path, file_name)
-            new_file_name = get_new_file_name(old_file_path)
-            new_file_path = join(path, new_file_name)
-
-            if file_name != new_file_name:
-                if not isfile(new_file_path):
-                    log(DEBUG, '%s -> %s' % (file_name, new_file_name))
-                    rename(old_file_path, new_file_path)
-                    renamed += 1
-                else:
-                    ui = raw_input('Cannot rename %s, target file %s already exists, remove source file? (Y/n) ' % (file_name, new_file_name)) or 'Y'
-                    if ui.upper() == 'Y':
-                        log(DEBUG, 'Removing file %s' % file_name)
-                        remove(old_file_path)
-
-    log(DEBUG, '%s files renamed' % renamed)
-
-
-def parse_args():
+def parse_args(payload):
     parser = ArgumentParser()
     parser.add_argument('--path', dest='path', help='Path containing images to be renamed', required=False)
-    parser.add_argument('--ctime', dest='use_ctime', help='If date tag is not available, use file creation time?', action='store_true', default=False)
-    parser.add_argument('--verbose', dest='verbose', help='Verbose mode', action='store_true', default=False)
-    return parser.parse_args(argv[1:])
+    parser.add_argument('--add_seconds', dest='add_seconds', help='Seconds to add to image property', type=int, default=0)
+    parsed_args = parser.parse_args(payload)
+
+    if not isdir(parsed_args.path):
+        raise InvalidPathError()
+    elif isfile(parsed_args.path):
+        raise InvalidPathError()
+
+    return parsed_args

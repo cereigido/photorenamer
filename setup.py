@@ -13,7 +13,7 @@ setup(
     long_description=README,
     author='Paulo Cereigido',
     url='https://github.com/cereigido/photorenamer',
-    version='1.1.0',
+    version='1.2.0',
     zip_safe=False,
     include_package_data=True,
     entry_points={
@@ -23,7 +23,6 @@ setup(
     },
     packages=find_packages(),
     install_requires=[
-        'pyexif==0.2.1',
-        'Pillow>=2.5.3',
+        'Pillow>=5.2.0',
     ],
 )
